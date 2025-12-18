@@ -1,2 +1,2 @@
 # fronted
-Este repositorio esta destinado para el frontend
+Este repositorio esta destinado para el frontend.
