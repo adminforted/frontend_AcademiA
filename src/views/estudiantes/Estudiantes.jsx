@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, } from 'react'
 import { CButton, CCard, CCardHeader, CCardBody, CCardFooter, CCol, CRow, CContainer } from '@coreui/react'
 import { cilPlus } from '@coreui/icons'
 import { CIcon } from '@coreui/icons-react'
@@ -16,6 +16,9 @@ import ModalNewEdit from '../../modals/ModalNewEdit.jsx'
 // import { getEstudiantes, createEstudiante, updateEstudiante, deleteEstudiante } from '../../api/apiEstudiantes.js'
 import apiEstudiantes from '../../api/apiEstudiantes.js'
 
+//  Importar hook para obtener datos de los estudiantes
+import { useStudentsData } from '../../hooks/useStudentsData.js'
+
 // Importar configuración de columnas (reutilizamos la función de usuarios)
 import { getEstudiantesColumns } from '../../utils/columns'
 
@@ -28,8 +31,16 @@ const initialFilters = []
  * Reutiliza la misma estructura y componentes de la gestión de usuarios
  */
 export default function Estudiante() {
+
+    // Usamos el hook para traer datos y los desestructuramos
+    const {
+        studentsData: tableData,
+        setStudentsData: setTableData,
+        loading
+    } = useStudentsData()
+
+
     // ---------- Estados principales ----------
-    const [tableData, setTableData] = useState([]) // Datos de la tabla de estudiantes
     const [searchTerm, setSearchTerm] = useState('') // Búsqueda global
     const [columnFilters, setColumnFilters] = useState(initialFilters) // Filtros por columna
     const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 10 }) // Paginación
@@ -41,44 +52,6 @@ export default function Estudiante() {
     const [editModalVisible, setEditModalVisible] = useState(false) // Modal de edición/creación
     const [studentToEdit, setStudentToEdit] = useState(null) // Datos del estudiante a editar
 
-    // ---------- Obtener estudiantes al cargar el componente ----------
-    useEffect(() => {
-        fetchEstudiantes()
-    }, [])
-
-    /**
-     * Obtiene la lista de estudiantes desde el backend
-     * Esta función llama al endpoint /api/estudiantes que filtra por tipo_entidad = 'ALU'
-     */
-    const fetchEstudiantes = async () => {
-        try {
-            const response = await apiEstudiantes.getAll()
-
-
-            //  Puntos de visualizacion de datos en consola para detectar errores
-            // 1. Ver toda la respuesta completa del backend
-            console.log('Respuesta completa del backend:', response)
-
-            // 2. Ver solo el cuerpo (lo más importante)
-            console.log('Datos recibidos (response.data):', response.data)
-
-
-            const { data } = response;
-
-            if (Array.isArray(data)) {
-                setTableData(data)
-            } else {
-                console.error('El formato de datos no es un array:', data);
-                setTableData([]);
-            }
-        } catch (error) {
-            console.error('Error al obtener estudiantes:', error)
-            if (error.response) {
-                console.error('Detalles del error:', error.response.data);
-                console.error('Status:', error.response.status);
-            }
-        }
-    }
 
     // ---------- Eliminar estudiante ----------
     const handleDelete = async (id) => {
@@ -135,7 +108,7 @@ export default function Estudiante() {
 
     // ---------- Configuración de TanStack Table ----------
     const table = useReactTable({
-        data: tableData,
+        data: tableData || [], // Por seguridad, por si los datos son nulos
         columns,
         getCoreRowModel: getCoreRowModel(),
         getPaginationRowModel: getPaginationRowModel(),

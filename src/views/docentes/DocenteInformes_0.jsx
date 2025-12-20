@@ -1,22 +1,11 @@
 import React, { useState, useEffect } from 'react'
 
-import { CButton, CCard, CCardHeader, CCardBody, CCardFooter, CCol, CRow, CContainer, } from '@coreui/react'
+import { CButton, CCard, CCardHeader, CCardBody, CCardFooter, CCol, CRow, CContainer,} from '@coreui/react'
 
 import '../../css/PersonalStyles.css'
-import CargarNotaIndividual from '../../views/notas/CargaNotaIndividual'
 
-// Importamos el hook para leer datos de alumnos de la BD
-import { useStudentsData } from '../../hooks/useStudentsData'
 
-export default function DocenteCargaNotas() {
-
-    const { studentsData, setstudentsData, loading } = useStudentsData()
-
-    // Usamos el hook para traer datos y los desestructuramos
-    const {
-        studentsData: tableData,
-        setStudentsData: setTableData,
-    } = useStudentsData()
+export default function DocenteInformes() {
 
     return (
 
@@ -32,22 +21,30 @@ export default function DocenteCargaNotas() {
                         <CRow className="justify-content-between align-items-center " > {/* Fila en la grilla.*/}
                             <CCol xs={12} sm="auto">    {/* Columna dentro de fila. Ocupa 5 de 12 unidades disponibles. Hereda gutter de CRow*/}
                                 <h4 id="titulo" className="mb-0 ">
-                                    Carga de Notas
+                                    Informes de Docentes
                                 </h4>
-                                <div className="small text-body-secondary"> Carga de notas de los estudiantes</div>
+                                <div className="small text-body-secondary"> Reportes y listados</div>
                             </CCol>
                         </CRow>
                     </CCardHeader>
+                    {/* ----------  /HEAD --------------- */}
+
 
                     {/* ----------  BODY --------------- */}
                     <CCardBody className="px-4 pt-1 pb-2 border border-light">
-                        <CargarNotaIndividual />
+                        
+                        
+                    
                     </CCardBody>
+                    {/* ----------  /BODY --------------- */}
+
 
                     {/* ----------  FOOTER --------------- */}
                     <CCardFooter
                         className="bg-white border-top px-3 py-1" >
+                        
                         FOOTER
+
                     </CCardFooter>
 
                 </CCard>
