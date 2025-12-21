@@ -1,3 +1,5 @@
+//  frontend_AcademiA\src\views\estudiantes\Estudiantes.jsx
+
 import React, { useState, useEffect, } from 'react'
 import { CButton, CCard, CCardHeader, CCardBody, CCardFooter, CCol, CRow, CContainer } from '@coreui/react'
 import { cilPlus } from '@coreui/icons'
@@ -13,14 +15,14 @@ import ModalConfirmDel from '../../modals/ModalConfirmDel.jsx'
 import ModalNewEdit from '../../modals/ModalNewEdit.jsx'
 
 // Importar funciones API para estudiantes
-// import { getEstudiantes, createEstudiante, updateEstudiante, deleteEstudiante } from '../../api/apiEstudiantes.js'
 import apiEstudiantes from '../../api/apiEstudiantes.js'
 
 //  Importar hook para obtener datos de los estudiantes
 import { useStudentsData } from '../../hooks/useStudentsData.js'
 
-// Importar configuración de columnas (reutilizamos la función de usuarios)
-import { getEstudiantesColumns } from '../../utils/columns'
+// Importar configuración de columnas
+import { getTableColumns } from '../../utils/columns.js'
+
 
 // Estado inicial para filtros
 const initialFilters = []
@@ -28,7 +30,6 @@ const initialFilters = []
 /**
  * Componente Estudiante
  * Gestiona la visualización y administración de estudiantes (tbl_entidad donde tipo_entidad = 'ALU')
- * Reutiliza la misma estructura y componentes de la gestión de usuarios
  */
 export default function Estudiante() {
 
@@ -102,9 +103,36 @@ export default function Estudiante() {
         }
     }
 
-    // ---------- Configuración de columnas ----------
-    // Usamos la configuración específica para estudiantes
-    const columns = getEstudiantesColumns(confirmDelete, handleClickEditar)
+
+
+
+    const estudiantesColumnsConfig = [
+        { accessorKey: 'nombre', header: 'Nombre' },
+        { accessorKey: 'apellido', header: 'Apellido' },
+        {
+            accessorKey: 'fec_nac',
+            header: 'Fecha Nac.',
+            // Formateamos la fecha del formato YYYY-MM-DD a DD/MM/YYYY
+            cell: (info) => {
+                const dateValue = info.getValue()
+                if (!dateValue) return '-'
+                const [year, month, day] = dateValue.split('-')
+                return `${day}/${month}/${year}`
+            },
+        },
+        { accessorKey: 'email', header: 'Email' },
+        { accessorKey: 'domicilio', header: 'Domicilio' },
+        { accessorKey: 'telefono', header: 'Teléfono' },
+    ]
+
+    // ==================== GENERACIÓN DE COLUMNAS FINALES CON LA FUNCIÓN REUTILIZABLE ====================
+
+    const columns = getTableColumns(
+        estudiantesColumnsConfig,
+        confirmDelete,      // para el botón borrar
+        handleClickEditar   // para el botón editar
+    )
+
 
     // ---------- Configuración de TanStack Table ----------
     const table = useReactTable({
@@ -215,15 +243,12 @@ export default function Estudiante() {
                     initialData={studentToEdit || {}}
                     onSave={handleSaveStudent}
                     fields={[
-                        //{ name: 'name', label: 'Apellido y Nombre', type: 'text', required: true, placeholder: 'Ejemplo: Pérez Carlos' },
-                        // { name: 'name', label: 'Apellido y Nombre', type: 'text', required: true, placeholder: 'Ejemplo: Pérez Carlos' },
                         { name: 'nombre', label: 'Nombre', type: 'text', required: true, placeholder: 'Ejemplo: Carlos' },
                         { name: 'apellido', label: 'Apellido', type: 'text', required: true, placeholder: 'Ejemplo: Pérez' },
                         { name: 'email', label: 'Email', type: 'email', required: false, placeholder: 'ejemplo@mail.com' },
                         { name: 'fec_nac', label: 'Fecha de Nacimiento', type: 'date', required: false },
                         { name: 'domicilio', label: 'Domicilio', type: 'text', required: false, placeholder: 'Calle 123' },
                         { name: 'telefono', label: 'Teléfono', type: 'tel', required: false, placeholder: '1234567890' },
-                        { name: 'password', label: 'Contraseña', type: 'password', required: false, placeholder: 'Solo si se crea usuario', fullWidth: true },
                     ]}
                 />
 

@@ -3,6 +3,28 @@ import React, { useState, useEffect } from 'react'
 import { CButton, CCard, CCardHeader, CCardBody, CCardFooter, CCol, CRow, CContainer, CFormInput, CFormLabel, } from '@coreui/react'
 import { cilPrint } from '@coreui/icons'
 
+import GenericTable from '../../components/usersTable/GenericTable.jsx'
+import { useReactTable, getCoreRowModel, getPaginationRowModel, getSortedRowModel, getFilteredRowModel } from '@tanstack/react-table'
+
+//  Importar hook para obtener datos de los estudiantes
+import { useStudentsData } from '../../hooks/useStudentsData.js'
+
+// Importar configuración de columnas
+// import { getEstudiantesColumns } from '../../utils/columns'
+import { getTableColumns } from '../../utils/columns.js'
+
+// Estado inicial para filtros
+const initialFilters = []
+
+
+// Importar componentes reutilizables
+import TablePagination from '../../components/tablePagination/TablePagination.jsx'
+import AdvancedFilters from '../../components/advancedFilters/AdvancedFilters.jsx'
+import TableActions from '../../components/tableActions/TableActions.jsx'
+import ModalConfirmDel from '../../modals/ModalConfirmDel.jsx'
+import ModalNewEdit from '../../modals/ModalNewEdit.jsx'
+
+
 import '../../css/PersonalStyles.css'
 
 
@@ -15,6 +37,13 @@ export default function CargaNotaAlumno() {
         alumno: '',
         tipo: ''
     });
+
+    // Usamos el hook para traer datos y los desestructuramos
+    const {
+        studentsData: tableData,
+        setStudentsData: setTableData,
+        loading
+    } = useStudentsData()
 
     // Datos simulados basados en la imagen (PDF)
     const alumnos = [
@@ -38,8 +67,71 @@ export default function CargaNotaAlumno() {
         }));
     };
 
+    // ---------- Estados principales ----------
+    const [searchTerm, setSearchTerm] = useState('') // Búsqueda global
+    const [columnFilters, setColumnFilters] = useState(initialFilters) // Filtros por columna
+    const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 10 }) // Paginación
+    const [sorting, setSorting] = useState([]) // Ordenamiento
+
+
+    // ==================== CONFIGURACIÓN ESPECÍFICA DE COLUMNAS PARA CARGA NOTAS ====================
+
+    const cargaNotasColumnsConfig = [
+        { accessorKey: '', header: 'Nº' },
+        {
+            accessorKey: 'apellido_nombre',
+            header: 'Apellido y Nombre',
+            cell: ({ row }) => {
+                const apellido = row.original.apellido || '';
+                const nombre = row.original.nombre || '';
+                return `${apellido}, ${nombre}`.trim() || '-';  // Evita mostrar ", " si uno falta
+            },
+        },
+        { accessorKey: '', header: '1ºT' },
+        { accessorKey: '', header: '2ºT' },
+        { accessorKey: '', header: '3ºT' },
+        { accessorKey: '', header: 'Prom.' },
+        { accessorKey: '', header: 'DIC.' },
+        { accessorKey: '', header: 'FEB.' },
+        { accessorKey: '', header: 'Calif. Def.' },
+        { accessorKey: '', header: 'Observaciones' },
+    ]
+
+    // ==================== GENERACIÓN DE COLUMNAS CON FUNCIÓN REUTILIZABLE ====================
+
+    const columns = getTableColumns(
+        cargaNotasColumnsConfig,
+        () => { }, // funciones vacías o null
+        null,
+        { showSelection: false, showActions: false }
+    )
+
+    // ---------- Configuración de TanStack Table ----------
+    const table = useReactTable({
+        data: tableData || [], // Por seguridad, por si los datos son nulos
+        columns,
+        getCoreRowModel: getCoreRowModel(),
+        getPaginationRowModel: getPaginationRowModel(),
+        onPaginationChange: setPagination,
+        getSortedRowModel: getSortedRowModel(),
+        onSortingChange: setSorting,
+        getFilteredRowModel: getFilteredRowModel(),
+        onGlobalFilterChange: setSearchTerm,
+        onColumnFiltersChange: setColumnFilters,
+        state: {
+            pagination,
+            sorting,
+            globalFilter: searchTerm,
+            columnFilters,
+        },
+    })
+
+
+
 
     return (
+
+
 
         <div>
 
@@ -225,8 +317,12 @@ export default function CargaNotaAlumno() {
                                                 <td className="bg-light"></td>
                                             </tr>
                                         ))}
+
                                     </tbody>
                                 </table>
+
+                                {/* Tabla de estudiantes */}
+                                <GenericTable table={table} />
                             </div>
 
                         </div>

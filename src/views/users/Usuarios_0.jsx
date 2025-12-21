@@ -28,10 +28,7 @@ import {
 
 import TablePagination from '../../components/tablePagination/TablePagination.jsx'
 
-//  import { getUsuariosColumns } from '../../utils/columns.js';  // Importamos las columnas de la tabla
-import { getTableColumns } from '../../utils/columns.js'; // Ahora importamos la función genérica
-
-
+import { getUsuariosColumns } from '../../utils/columns.js';  // Importamos las columnas de la tabla
 import GenericTable from '../../components/usersTable/GenericTable.jsx'; // Importamos el componente UserTable
 import AdvancedFilters from '../../components/advancedFilters/AdvancedFilters.jsx'; // Importamos el componente de filtros 
 
@@ -66,29 +63,6 @@ const Usuarios = () => {
   const [systemName, setSystemName] = useState('');   // Para el formulario
   const [systemPassword, setSystemPassword] = useState('');   // Para el formulario
   const [systemEditId, setSystemEditId] = useState(null);   // Para edición
-
-  //  --------------------- Configuración de Columnas   ---------------------    
-  // Definimos las columnas específicas de datos para la tabla de Usuarios
-  const usuariosColumnsConfig = [
-    {
-      accessorKey: 'name',
-      header: 'Nombre y Apellido',
-      // cell por defecto ya muestra el valor o '-', no necesitamos personalizarla
-    },
-    {
-      accessorKey: 'email',
-      header: 'Mail',
-    },
-    {
-      accessorKey: 'domicilio',
-      header: 'Domicilio',
-    },
-    {
-      accessorKey: 'telefono',
-      header: 'Teléfono',
-    },
-    // Si en el futuro se precisan agregar más columnas personalizadas, se ponen aquí
-  ];
 
 
 
@@ -165,16 +139,7 @@ const Usuarios = () => {
 
 
   // Se obtienen las columnas de la función 'getUsuariosColumns', importada de columns.js
-//  const columns = getUsuariosColumns(confirmDelete, handleClickEditar)
-
-// ==================== CREACIÓN DE COLUMNAS  ====================
-
-  // Se usa la función genérica: le pasamos config + callbacks
-  const columns = getTableColumns(
-    usuariosColumnsConfig,
-    confirmDelete,         // función para abrir modal de borrar
-    handleClickEditar      // función para abrir modal de editar
-  );
+  const columns = getUsuariosColumns(confirmDelete, handleClickEditar)
 
 
   const table = useReactTable({

@@ -1,3 +1,5 @@
+//  frontend_AcademiA\src\utils\columns.js
+
 //  Manejo de configuración de columnas de las tablas
 //  Se utilizan funciones nombradas para centralizar en un solo archivo las funciones de tablas de otros componentes. 
 
@@ -7,365 +9,145 @@ import { CIcon } from '@coreui/icons-react';
 import { cilPencil, cilTrash } from '@coreui/icons';
 import { createColumnHelper } from '@tanstack/react-table'
 
+// Creamos una única instancia del columnHelper para reutilizarla
+const columnHelper = createColumnHelper();
+
+
 // Función que maneja las columnas de la tabla usuarios
-const getUsuariosColumns = (confirmDelete, handleClickEditar) => {
+//  const getUsuariosColumns = (confirmDelete, handleClickEditar) => {
 
-  const columnHelper = createColumnHelper()
 
-  return [
-    columnHelper.accessor('select', {
-      header: ({ table }) => {
-        return (
-          <CFormCheck
-            id='headCheck'  /* ID único */
-            checked={table.getIsAllRowsSelected()} // getIsAllRowsSelected() devuelve true si todas  las filas de la tabla están      seleccionadas.
-            onChange={table.getToggleAllRowsSelectedHandler()} // invierte la seleccio de todas las filas.
+/**
+ * Columna de selección (checkbox para seleccionar filas)
+ * Es común a todas las tablas, por eso se define una sola vez
+ */
+const selectionColumn = columnHelper.accessor('select', {
+  id: 'select', // Es importante dar un id estable
+  header: ({ table }) => (
+    <CFormCheck
+      id="headCheck"
+      checked={table.getIsAllRowsSelected()}
+      onChange={table.getToggleAllRowsSelectedHandler()}
+    />
+  ),
+  cell: ({ row }) => (
+    <div style={{ display: 'flex', gap: '10px' }}>
+      <CFormCheck
+        checked={row.getIsSelected()}
+        disabled={!row.getCanSelect()}
+        onChange={row.getToggleSelectedHandler()}
+      />
+    </div>
+  ),
+  enableSorting: false,
+  enableColumnFilter: false,
+});
 
-          />
-        )
-      },
-
-      cell: ({ row }) => {
-        return (
-          <div style={{ display: 'flex', gap: '10px' }}>
-            <CFormCheck
-              checked={row.getIsSelected()}
-              disabled={!row.getCanSelect()}
-              onChange={row.getToggleSelectedHandler()} // invierte la seleccio de todas las filas.
-            />
-          </div>
-        )
-      },
-      enableSorting: false,
-      filterFn: 'includesString',
-    }
+/**
+ * Columna de acciones (editar y borrar)
+ * Común a todas las tablas.
+ * Recibe las funciones de callback que vienen del componente padre
+ */
+const actionsColumn = (confirmDelete, handleClickEditar) =>
+  columnHelper.display({
+    id: 'actions',
+    header: () => (
+      <div className="d-flex justify-content-center">
+        <span>Acción</span>
+      </div>
     ),
+    cell: ({ row }) => (
+      <div style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>
+        {/* Botón Editar */}
+        <a
+          className="text-muted hover:text-blue-700 cursor-pointer"
+          title="Editar"
+          onClick={() => handleClickEditar(row.original)}
+        >
+          <CIcon icon={cilPencil} size="lg" className="text-gray-600" />
+        </a>
 
-
-    columnHelper.accessor('name', {
-      header: () => 'Nombre y Apellido',
-      cell: info => info.getValue(),  // Cómo se muestra el valor en la celda
-      enableSorting: true,
-      filterFn: 'includesString',
-    }
+        {/* Botón Borrar */}
+        <a
+          className="text-muted hover:text-danger cursor-pointer"
+          title="Borrar"
+          onClick={() => confirmDelete(row.original.id)}
+        >
+          <CIcon icon={cilTrash} size="lg" className="text-gray-600" />
+        </a>
+      </div>
     ),
+    enableSorting: false,
+    enableColumnFilter: false,
+  });
 
-    columnHelper.accessor('email', {
-      header: () => 'Mail',
-      cell: info => info.getValue(),
-      enableSorting: true,
+
+
+/**
+ * FUNCIÓN PRINCIPAL REUTILIZABLE
+ * Recibe:
+ *   - columnsConfig: array de objetos que definen las columnas de datos
+ *   - confirmDelete: función para confirmar borrado
+ *   - handleClickEditar: función para abrir edición
+ *
+ * Ejemplo de columnsConfig:
+ * [
+ *   { accessorKey: 'nombre', header: 'Nombre' },
+ *   { accessorKey: 'apellido', header: 'Apellido' },
+ *   { accessorKey: 'email', header: 'Email', cell: (info) => info.getValue() || '-' },
+ *   ...
+ * ]
+ */
+export const getTableColumns = (
+  columnsConfig,
+  confirmDelete,
+  handleClickEditar,
+  { showSelection = true, showActions = true } = {}
+) => {
+  // Convertimos la configuración simple en columnas reales con columnHelper
+  const dataColumns = columnsConfig.map((col) =>
+    columnHelper.accessor(col.accessorKey, {
+      header: col.header || col.accessorKey.charAt(0).toUpperCase() + col.accessorKey.slice(1),
+      cell: col.cell || ((info) => info.getValue() || '-'), // Por defecto muestra el valor o '-'
+      enableSorting: col.enableSorting !== false, // true por defecto
       filterFn: 'includesString',
-    }),
-
-    columnHelper.accessor('domicilio', {
-      header: () => 'Domicilio',
-      cell: info => info.getValue(),
-      enableSorting: true,
-      filterFn: 'includesString',
-    }),
-
-    columnHelper.accessor('telefono', {
-      header: () => 'Teléfono',
-      cell: info => info.getValue(),
-      enableSorting: true,
-      filterFn: 'includesString',
-    }),
-
-    columnHelper.display({
-      id: 'actions',
-      header: () => {
-        return (
-          <div className="d-flex justify-content-center gap-3">
-            <span>Acción</span>
-          </div>
-        )
-      },
-      cell: ({ row }) => {
-        //console.log('Datos de la fila:', row.original);
-        return (
-          <div style={{ display: 'flex', gap: '10px' }}>
-            <a
-              //href="#editEmployeeModal"
-              className="text-muted hover:text-blue-700"
-              data-toggle="modal"
-              title="Editar"
-              onClick={() => {
-                console.log('Paso por acá');
-                console.log('Id elemento a editar: ', row.original.id)
-                handleClickEditar(row.original)
-              }
-              }
-            >
-              <CIcon
-                icon={cilPencil}
-                size="lg"
-                className="fill-gray-500 "
-
-              />
-            </a>
-
-            <a
-              //href=""
-              className="text-muted hover:text-danger"  /* Color base */
-              data-toggle="modal"
-              title="Borrar"
-
-              onClick={() => {
-                console.log('Paso por acá')
-                console.log('Id elemento borrado: ', row.original.id)
-                confirmDelete(row.original.id); // Llama a confirmDelete en lugar de handleDelete, porque abre la modal
-              }  // row.original
-              }
-            >
-              <CIcon
-                icon={cilTrash}
-                size="lg"
-                className="text-gray-500"  /* Efecto hover */
-              />
-            </a>
-          </div>)
-      },
-      enableSorting: false, // Se deshabilita el ordenamiento en esta columna ('actions').
-      enableColumnFilter: false, // Se deshabilita el filtrado
+      ...col.extraProps, // Permite pasar propiedades adicionales si es necesario
     })
+  );
 
-  ];
-}
+  // Construimos el array final de columnas
+  const columns = [];
 
-// Función que maneja las columnas de la tabla estudiantes
-// Muestra: Nombre, Apellido, Fecha Nacimiento, Email, Domicilio, Teléfono
-const getEstudiantesColumns = (confirmDelete, handleClickEditar) => {
+  // Columna de selección (solo si showSelection es true)
+  if (showSelection) {
+    columns.push(selectionColumn);
+  }
 
-  const columnHelper = createColumnHelper()
+  // Columnas de datos
+  columns.push(...dataColumns);
 
+  // Columna de acciones (solo si showActions es true)
+  if (showActions) {
+    columns.push(actionsColumn(confirmDelete, handleClickEditar));
+  }
+
+  return columns;
+};
+
+/*
+
+
+
+
+  // Armamos el array final: selección + columnas de datos + acciones
   return [
-    columnHelper.accessor('select', {
-      header: ({ table }) => {
-        return (
-          <CFormCheck
-            id='headCheck'
-            checked={table.getIsAllRowsSelected()}
-            onChange={table.getToggleAllRowsSelectedHandler()}
-          />
-        )
-      },
-      cell: ({ row }) => {
-        return (
-          <div style={{ display: 'flex', gap: '10px' }}>
-            <CFormCheck
-              checked={row.getIsSelected()}
-              disabled={!row.getCanSelect()}
-              onChange={row.getToggleSelectedHandler()}
-            />
-          </div>
-        )
-      },
-      enableSorting: false,
-      filterFn: 'includesString',
-    }),
-
-    columnHelper.accessor('nombre', {
-      header: () => 'Nombre',
-      cell: info => info.getValue() || '-',
-      enableSorting: true,
-      filterFn: 'includesString',
-    }),
-
-    columnHelper.accessor('apellido', {
-      header: () => 'Apellido',
-      cell: info => info.getValue() || '-',
-      enableSorting: true,
-      filterFn: 'includesString',
-    }),
-
-    columnHelper.accessor('fec_nac', {
-      header: () => 'Fecha Nac.',
-      cell: info => {
-        const dateValue = info.getValue();
-        if (!dateValue) return '-';
-        // Asumiendo formato YYYY-MM-DD que viene del backend
-        const [year, month, day] = dateValue.split('-');
-        return `${day}/${month}/${year}`;
-      },
-      enableSorting: true,
-      filterFn: 'includesString',
-    }),
-
-    columnHelper.accessor('email', {
-      header: () => 'Email',
-      cell: info => info.getValue() || '-',
-      enableSorting: true,
-      filterFn: 'includesString',
-    }),
-
-    columnHelper.accessor('domicilio', {
-      header: () => 'Domicilio',
-      cell: info => info.getValue() || '-',
-      enableSorting: true,
-      filterFn: 'includesString',
-    }),
-
-    columnHelper.accessor('telefono', {
-      header: () => 'Teléfono',
-      cell: info => info.getValue() || '-',
-      enableSorting: true,
-      filterFn: 'includesString',
-    }),
-
-    columnHelper.display({
-      id: 'actions',
-      header: () => {
-        return (
-          <div className="d-flex justify-content-center gap-3">
-            <span>Acción</span>
-          </div>
-        )
-      },
-      cell: ({ row }) => {
-        return (
-          <div style={{ display: 'flex', gap: '10px' }}>
-            <a
-              className="text-muted hover:text-blue-700"
-              data-toggle="modal"
-              title="Editar"
-              onClick={() => handleClickEditar(row.original)}
-            >
-              <CIcon icon={cilPencil} size="lg" className="fill-gray-500 " />
-            </a>
-
-            <a
-              className="text-muted hover:text-danger"
-              data-toggle="modal"
-              title="Borrar"
-              onClick={() => confirmDelete(row.original.id)}
-            >
-              <CIcon icon={cilTrash} size="lg" className="text-gray-500" />
-            </a>
-          </div>)
-      },
-      enableSorting: false,
-      enableColumnFilter: false,
-    })
+    
+    
+    
+    
+    selectionColumn,     // Siempre primera: checkbox de selección
+    ...dataColumns,      // Las columnas específicas que nos pasan
+    actionsColumn(confirmDelete, handleClickEditar), // Siempre última: acciones
   ];
-}
-
-
-// Función que maneja las columnas de la tabla DOCENTES
-// Muestra: Nombre, Apellido, Fecha Nacimiento, Email, Domicilio, Teléfono
-const getDocentesColumns = (confirmDelete, handleClickEditar) => {
-
-  const columnHelper = createColumnHelper()
-
-  return [
-    columnHelper.accessor('select', {
-      header: ({ table }) => {
-        return (
-          <CFormCheck
-            id='headCheck'
-            checked={table.getIsAllRowsSelected()}
-            onChange={table.getToggleAllRowsSelectedHandler()}
-          />
-        )
-      },
-      cell: ({ row }) => {
-        return (
-          <div style={{ display: 'flex', gap: '10px' }}>
-            <CFormCheck
-              checked={row.getIsSelected()}
-              disabled={!row.getCanSelect()}
-              onChange={row.getToggleSelectedHandler()}
-            />
-          </div>
-        )
-      },
-      enableSorting: false,
-      filterFn: 'includesString',
-    }),
-
-    columnHelper.accessor('nombre', {
-      header: () => 'Nombre',
-      cell: info => info.getValue() || '-',
-      enableSorting: true,
-      filterFn: 'includesString',
-    }),
-
-    columnHelper.accessor('apellido', {
-      header: () => 'Apellido',
-      cell: info => info.getValue() || '-',
-      enableSorting: true,
-      filterFn: 'includesString',
-    }),
-
-    columnHelper.accessor('fec_nac', {
-      header: () => 'Fecha Nac.',
-      cell: info => {
-        const dateValue = info.getValue();
-        if (!dateValue) return '-';
-        // Asumiendo formato YYYY-MM-DD que viene del backend
-        const [year, month, day] = dateValue.split('-');
-        return `${day}/${month}/${year}`;
-      },
-      enableSorting: true,
-      filterFn: 'includesString',
-    }),
-
-    columnHelper.accessor('email', {
-      header: () => 'Email',
-      cell: info => info.getValue() || '-',
-      enableSorting: true,
-      filterFn: 'includesString',
-    }),
-
-    columnHelper.accessor('domicilio', {
-      header: () => 'Domicilio',
-      cell: info => info.getValue() || '-',
-      enableSorting: true,
-      filterFn: 'includesString',
-    }),
-
-    columnHelper.accessor('telefono', {
-      header: () => 'Teléfono',
-      cell: info => info.getValue() || '-',
-      enableSorting: true,
-      filterFn: 'includesString',
-    }),
-
-    columnHelper.display({
-      id: 'actions',
-      header: () => {
-        return (
-          <div className="d-flex justify-content-center gap-3">
-            <span>Acción</span>
-          </div>
-        )
-      },
-      cell: ({ row }) => {
-        return (
-          <div style={{ display: 'flex', gap: '10px' }}>
-            <a
-              className="text-muted hover:text-blue-700"
-              data-toggle="modal"
-              title="Editar"
-              onClick={() => handleClickEditar(row.original)}
-            >
-              <CIcon icon={cilPencil} size="lg" className="fill-gray-500 " />
-            </a>
-
-            <a
-              className="text-muted hover:text-danger"
-              data-toggle="modal"
-              title="Borrar"
-              onClick={() => confirmDelete(row.original.id)}
-            >
-              <CIcon icon={cilTrash} size="lg" className="text-gray-500" />
-            </a>
-          </div>)
-      },
-      enableSorting: false,
-      enableColumnFilter: false,
-    })
-  ];
-}
-
-
-export { getUsuariosColumns, getEstudiantesColumns,getDocentesColumns };
+};
+*/
