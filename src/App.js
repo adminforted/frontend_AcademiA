@@ -8,6 +8,8 @@ import { CSpinner, useColorModes } from '@coreui/react'
 import './scss/style.scss'
 import './scss/examples.scss'
 
+import { isTokenExpired } from './utils/isTokenExpired'
+
 //  ----------  Páginas  ----------  
 const DefaultLayout = React.lazy(() => import('./layout/DefaultLayout'))  //Layoult Principal, por defecto
 const Login = React.lazy(() => import('./views/pages/login/Login'))
@@ -132,8 +134,16 @@ const ProtectedRoute = ({ children, requiredRoles = [] }) => {
 
   // Si el token existe, verificar Autorización (Rol)
   // Obtener los datos del usuario del localStorage
-  const userJson = localStorage.getItem('user');
-  const user = userJson ? JSON.parse(userJson) : null;
+  let user = null
+try {
+  user = JSON.parse(localStorage.getItem('user'))
+} catch {
+  localStorage.clear()
+  return <Navigate to="/login" replace />
+}
+
+
+
   const rolSistema = user?.rol_sistema; // Usamos optional chaining por seguridad
 
   // Si la ruta no requiere roles específicos, permitir el acceso (e.g., /home)
@@ -153,20 +163,17 @@ const ProtectedRoute = ({ children, requiredRoles = [] }) => {
 
 }
 
-
 const App = () => {
-  
-/*
-  //  Debug: mlimpia el localstorage para limpiar tokens viejos.
-  //  Usar sólo en Debug, no dejar definitivo
-    useEffect(() => {
-  localStorage.clear()
-  console.log('localStorage limpiado')
+
+useEffect(() => {
+  const token = localStorage.getItem('token')
+
+  if (!token || isTokenExpired(token)) {
+    localStorage.clear()
+    window.location.href = '/login'
+  }
 }, [])
 
-*/
-
-  
   return (
     <HashRouter>
       <RouterContent />
