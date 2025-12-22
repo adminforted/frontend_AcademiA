@@ -22,15 +22,19 @@ import { compactStyles, detailedStyles } from '../dashboard/pdfFormats/pdfStyles
 
 import '../../css/PersonalStyles.css'
 
+
+// Importar funciones API para usuarios 
+import apiUsuarios from '../../api/apiUsuarios.js'
+
+
+
 import {
   createColumnHelper, flexRender, getCoreRowModel, useReactTable, getPaginationRowModel, getSortedRowModel, getFilteredRowModel,
 } from '@tanstack/react-table'
 
 import TablePagination from '../../components/tablePagination/TablePagination.jsx'
 
-//  import { getUsuariosColumns } from '../../utils/columns.js';  // Importamos las columnas de la tabla
 import { getTableColumns } from '../../utils/columns.js'; // Ahora importamos la función genérica
-
 
 import GenericTable from '../../components/usersTable/GenericTable.jsx'; // Importamos el componente UserTable
 import AdvancedFilters from '../../components/advancedFilters/AdvancedFilters.jsx'; // Importamos el componente de filtros 
@@ -52,9 +56,9 @@ const initialFilters = [
 
 const Usuarios = () => {
 
-   // Usamos el hook para traer datos y los desestructuramos
+  // Usamos el hook para traer datos y los desestructuramos
 
-   
+
   const [tableData, setTableData] = useState([])    //  State para manejo de los datos de la tabla
   const [searchTerm, setSearchTerm] = useState(''); // Búsqueda dinámica. Estado para el término de búsqueda global
   const [visibleXL, setVisibleXL] = useState(false);
@@ -74,6 +78,10 @@ const Usuarios = () => {
   //  --------------------- Configuración de Columnas   ---------------------    
   // Definimos las columnas específicas de datos para la tabla de Usuarios
   const usuariosColumnsConfig = [
+    {
+      accessorKey: 'id_usuario', // Antes quizás tenías 'id'
+      header: 'ID',
+    },
     {
       accessorKey: 'name',
       header: 'Nombre y Apellido',
@@ -109,9 +117,28 @@ const Usuarios = () => {
   //  Obtener datos de la base
   const fetchUsers = async () => {          //  Define una función asíncrona fetchUsers que obtiene la lista de usuarios desde la API.
     try {                                   //  try / catch: Maneja errores en caso de que la solicitud falle.
-      const { data } = await getUsers();  // Llama a getUsers y desestructura la respuesta para obtener solo el data (lista de usuarios).
-      setTableData(data);                     //  Actualiza el estado users con los datos obtenidos
-      //setTableData(prevData => [...prevData, ...data])
+      console.log("--- Iniciando petición a la API ---");
+
+      // Capturamos la respuesta COMPLETA sin desestructurar todavía
+      const response = await getUsers();
+
+      // DEBUG contenido de Axios
+      console.log("%c--- DEBUG API USUARIOS ---", "color: #00ff00; font-weight: bold;");
+      console.log("Paquete completo de Axios:", response);
+
+      // Mostramos los usuarios en formato tabla
+      console.log("Contenido de data:");
+      console.table(response.data);
+
+
+      // Usamos los datos
+      //if (response.data && Array.isArray(response.data)) {
+      setTableData(response.data);
+      //}
+
+
+
+
     } catch (error) {
       console.error('Error fetching users:', error);  //Si hay un error, lo muestra en la consola sin interrumpir la ejecución.
     }
@@ -159,15 +186,6 @@ const Usuarios = () => {
   const [sorting, setSorting] = useState([]); // "sorting" es un array de objetos como id de la columna y dirección. Se inicializa vacío.
 
 
-  /*  ---------------------  Configuración de la tabla  -----------------------  */
-  // Instancia de la tabla (useReactTable) es el "cerebro" de TanStack Table. 
-  // La variable "table" (creada con useReactTable) contiene toda la lógica y los métodos para manejar la tabla, 
-  // como paginación, filas, y renderizado.
-
-  // Configuración de la tabla con TanStack
-  // Se obtienen las columnas de la función 'getUsuariosColumns', importada de columns.js
-  //  const columns = getUsuariosColumns(confirmDelete, handleClickEditar)
-
   // ==================== CREACIÓN DE COLUMNAS  ====================
 
   // Se usa la función genérica: le pasamos config + callbacks
@@ -178,34 +196,37 @@ const Usuarios = () => {
   );
 
 
-  const table = useReactTable({
-    data: tableData,              // Datos de la tabla, obtenidos de datos.json 
-    columns,                      // Columnas definidas anteriormente
+  const tableDataPrueba = [
+  { id_usuario: 1, name: 'Admin', email: 'a@a.com', rol_sistema: 'ADMIN' }
+];
 
+console.log("COLUMNAS FINALES:", columns);
+console.log("Cantidad de columnas:", columns.length);
+
+  const table = useReactTable({
+    data: tableData,             // Datos de la tabla, obtenidos de datos.json 
+    columns,
     getCoreRowModel: getCoreRowModel(),   // función de TanStack. Genera el modelo básico de filas
+
+
+
     getPaginationRowModel: getPaginationRowModel(), // Activa la paginación, divide filas en páginas según pageSize y pageIndex.
     onPaginationChange: setPagination, // Actualiza el estado de paginación al cambiar de página    
 
     getSortedRowModel: getSortedRowModel(), // Activar ordenamiento
     onSortingChange: setSorting, // Actualizar estado de ordenamiento
 
-    getFilteredRowModel: getFilteredRowModel(), // Activar filtrado
     onGlobalFilterChange: setSearchTerm, // Actualiza el filtro global
-    onColumnFiltersChange: setColumnFilters, // Actualiza filtros por columna
 
     state: {
       pagination,   // Pasa el estado de paginación a TanStack, para que sepa que pagina mostrar
       sorting,  // Pasar el estado de ordenamiento
       globalFilter: searchTerm, // Pasar el filtro global al estado
-      columnFilters, // Pasar filtros por columna
+      columnFilters: columnFilters, 
     },
   });
 
-
   // Funciones para usuarios de sistema (API)
-
-
-
 
   // Guardar usuario (crear o actualizar)
   const handleSaveSystemUser = async () => {
@@ -263,7 +284,12 @@ const Usuarios = () => {
     setSystemEditId(null);
   };
 
+  console.log("Rendereando Usuarios. State actual de tableData:", tableData);
 
+  console.log("Filas detectadas por TanStack:", table.getRowModel().rows.length);
+
+  console.log("¿TanStack tiene filas?:", table.getRowModel().rows.length);
+  
 
   return (
 
@@ -288,11 +314,7 @@ const Usuarios = () => {
                 color="primary"
                 className="shadow-sm"
                 size="sm"
-                // onClick={() => setVisibleXL(!visibleXL)}
-                // onClick={() => setEditModalVisible2(!editModalVisible2)}
                 onClick={() => handleClickEditar('')}
-
-
               >
                 <CIcon icon={cilPlus} className="me-1" />
                 Nuevo Usuario
@@ -317,9 +339,7 @@ const Usuarios = () => {
             setColumnFilters={setColumnFilters}
           />
 
-
           {/*  ---------------  Tabla  ------------- */}
-          {/* Se utiliza el componente GenericTable importado de GenericTable.jsx, pasando la instancia de table como prop.*/}
           <GenericTable table={table} />
 
         </CCardBody>
@@ -437,6 +457,7 @@ const Usuarios = () => {
 
 
 }
+
 
 
 export default Usuarios
