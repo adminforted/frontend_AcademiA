@@ -153,12 +153,26 @@ const ProtectedRoute = ({ children, requiredRoles = [] }) => {
 
 }
 
+
 const App = () => {
+  
+/*
+  //  Debug: mlimpia el localstorage para limpiar tokens viejos.
+  //  Usar sólo en Debug, no dejar definitivo
+    useEffect(() => {
+  localStorage.clear()
+  console.log('localStorage limpiado')
+}, [])
+
+*/
+
+  
   return (
     <HashRouter>
       <RouterContent />
     </HashRouter>
   )
+
 }
 
 export default App

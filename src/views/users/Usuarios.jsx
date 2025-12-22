@@ -50,6 +50,7 @@ const initialFilters = [
   { id: 'telefono', value: '' },
 ];
 
+
 const Usuarios = () => {
 
    // Usamos el hook para traer datos y los desestructuramos
@@ -121,6 +122,9 @@ const Usuarios = () => {
   //   O sea, carga la lista inicial de usuarios al cargar la página.
 
 
+
+
+
   //   ---------------------    Elimiar usuario ---------------------  
   const handleDelete = async (id) => {
     try {
@@ -189,15 +193,15 @@ const Usuarios = () => {
     getSortedRowModel: getSortedRowModel(), // Activar ordenamiento
     onSortingChange: setSorting, // Actualizar estado de ordenamiento
 
-    getFilteredRowModel: getFilteredRowModel(), // Activar filtrado
+    //getFilteredRowModel: getFilteredRowModel(), // Activar filtrado
     onGlobalFilterChange: setSearchTerm, // Actualiza el filtro global
-    onColumnFiltersChange: setColumnFilters, // Actualiza filtros por columna
+    //onColumnFiltersChange: setColumnFilters, // Actualiza filtros por columna
 
     state: {
       pagination,   // Pasa el estado de paginación a TanStack, para que sepa que pagina mostrar
       sorting,  // Pasar el estado de ordenamiento
       globalFilter: searchTerm, // Pasar el filtro global al estado
-      columnFilters, // Pasar filtros por columna
+      //columnFilters, // Pasar filtros por columna
     },
   });
 
@@ -310,12 +314,14 @@ const Usuarios = () => {
 
           {/* Filtros avanzados y búsqueda global 
           Se pasan columnFilters y setColumnFilters directamente al componente AdvancedFilters*/}
+          {/* Se desactivan por Debug 
           <AdvancedFilters
             searchTerm={searchTerm}
             setSearchTerm={setSearchTerm}
             columnFilters={columnFilters}
             setColumnFilters={setColumnFilters}
           />
+          */}
 
 
           {/*  ---------------  Tabla  ------------- */}
