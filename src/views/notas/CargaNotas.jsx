@@ -9,22 +9,21 @@ import { useReactTable, getCoreRowModel, getPaginationRowModel, getSortedRowMode
 //   Para cargar la planilla modelo
 import ModeloPlanilla from './Modelo_Planilla.jsx'
 
-//  Importar hook para obtener datos de los estudiantes
-//  import { useStudentsData } from '../../hooks/useStudentsData.js'
-
 //  Importar hook para obtener notas de los estudiantes
 import { usePlanillaCalificaciones } from '../../hooks/useCalificaciones.js';
 
 // Importar configuración de columnas
 import { getTableColumns } from '../../utils/columns.js'
 
-//  Importamos el servicio apiMaterias que contiene la función getCiclosAll.
-import apiMaterias, { getCiclosAll } from '../../api/apiMaterias.jsx'
+//  Importamos el servicio apiMaterias que contiene las funciones getCiclosAll y getMateriasCurso
+import apiMaterias, { getCiclosAll, getMateriasCurso } from '../../api/apiMaterias.jsx'
+
+//  Importamos el servicio apiCursos
+import apiCursos, { getCursosAll, getCursosCiclo } from '../../api/apiCursos.jsx'
+
 
 // Estado inicial para filtros
 const initialFilters = []
-
-
 
 // Importar componentes reutilizables
 import TablePagination from '../../components/tablePagination/TablePagination.jsx'
@@ -33,9 +32,7 @@ import TableActions from '../../components/tableActions/TableActions.jsx'
 import ModalConfirmDel from '../../modals/ModalConfirmDel.jsx'
 import ModalNewEdit from '../../modals/ModalNewEdit.jsx'
 
-
 import '../../css/PersonalStyles.css'
-
 
 export default function CargaNotaAlumno() {
 
@@ -58,10 +55,17 @@ export default function CargaNotaAlumno() {
 
     */
 
-    const [materiaId, setMateriaId] = useState('');
-    const [ciclos, setCiclos] = useState([]);
-    const [selectedCicloId, setSelectedCicloId] = useState(""); // ← guarda solo el ID como string o number
+    // ---------- Estados para Ciclos ----------
+    const [ciclos, setCiclos] = useState([]);   //  Guardamos los datos obtenidos de la api ciclos
+    const [selectedCicloId, setSelectedCicloId] = useState(""); // Guardamos el ciclo seleccionado
 
+    // ---------- Estados para Cursos ----------
+    const [cursos, setCursos] = useState([]);   //  Lista de Cursos para el Select
+    const [selectedCursoId, setSelectedCursoId] = useState("");   //  Lista de Cursos para el Select
+
+    // ---------- Estados para Materias ----------
+    const [materias, setMaterias] = useState([]);   //  Lista de Materias para el Select
+    const [materiaId, setMateriaId] = useState("");   //  ID Materia Seleccionada
 
 
     const {
@@ -99,14 +103,62 @@ export default function CargaNotaAlumno() {
             try {
                 const response = await apiMaterias.getCiclosAll();  // Ejecuto la apiMaterias.getCiclos
                 setCiclos(response.data);   // Guardo los datos en la variable ciclos
-
-
             } catch (err) {
                 console.error("Error al cargar ciclos lectivos:", err);
             }
         };
         fetchCiclos();
     }, []);
+
+
+
+
+    // ==================== CARGAR LOS CURSOS CADA VEZ QUE selectedCicloId CAMBIA     ====================
+    useEffect(() => {
+        const cargarCursos = async () => {
+
+            // Si el usuario selecciona "Seleccionar Ciclo" (valor ""), limpiamos cursos
+            if (!selectedCicloId || selectedCicloId === "0") {
+                setCursos([]);
+                setSelectedCursoId('');
+                return;
+            }
+
+            try {
+                // Ejecuto la apiCursos.getCursosCiclo pasando como parámetro el selectedCicloId
+                const response = await apiCursos.getCursosCiclo(selectedCicloId);
+                setCursos(response.data);   // Guardo los datos en la variable Cursos
+                setSelectedCursoId(''); // Reseteamos el cursoId al cambiar de ciclo
+            } catch (err) {
+                console.error("Error al Traer cursos del ciclo:", err);
+            }
+        };
+        cargarCursos();
+    }, [selectedCicloId]); // <--- La "llave" que dispara el efecto
+
+
+    // ==================== CARGAR LAS MATERIAS CADA VEZ QUE selectedCursoID CAMBIA     ====================
+    useEffect(() => {
+        const cargarMaterias = async () => {
+
+            // Si el usuario selecciona "Seleccionar Curso" (valor ""), limpiamos Materias
+            if (!selectedCursoId || selectedCursoId === "0") {
+                setMaterias([]);
+                setMateriaId('');
+                return;
+            }
+
+            try {
+                // Ejecuto la api routes_materias.get_materias_curso pasando como parámetro el selectedCursoId
+                const response = await apiMaterias.getMateriasCurso(selectedCursoId);
+                setMaterias(response.data);   // Guardo los datos en la variable
+                setMateriaId(''); // Reseteamos materiaId al cambiar de curso
+            } catch (err) {
+                console.error("Error al Traer Matrerias del curso:", err);
+            }
+        };
+        cargarMaterias();
+    }, [selectedCursoId]); // <--- La "llave" que dispara el efecto
 
 
 
@@ -162,6 +214,27 @@ export default function CargaNotaAlumno() {
         },
     })
 
+
+
+    // ==================== DATOS DERIVADOS PARA MOSTRAR E ====================
+    // Calculamos una sola vez los objetos completos seleccionados
+    const cicloSeleccionado = ciclos.find(c => c.id_ciclo_lectivo === parseInt(selectedCicloId))
+    const cursoSeleccionado = cursos.find(c => c.id_curso === parseInt(selectedCursoId))
+    const materiaSeleccionada = materias.find(m => m.id_materia === parseInt(materiaId))
+
+    // Extraemos los valores que vamos a mostrar
+    const datosPlanilla = {
+        ciclo: cicloSeleccionado?.nombre_ciclo_lectivo || 'Sin seleccionar',
+        curso: cursoSeleccionado?.curso || 'Sin seleccionar',
+        turno: cursoSeleccionado?.turno || 'Sin seleccionar',
+        materia: materiaSeleccionada?.nombre_rel?.nombre_materia || 'Sin seleccionar',
+        // Puedes agregar más datos aquí según necesites
+        // docente: materiaSeleccionada?.docente || 'Sin asignar',
+        fecha: new Date().toLocaleDateString()
+    }
+
+
+
     return (
         <div>
 
@@ -173,9 +246,9 @@ export default function CargaNotaAlumno() {
                 </CCardHeader>
                 <CCardBody>
                     <CRow className="g-3">
+
                         <CCol md={3}>
                             <label className="form-label text-uppercase small fw-semibold text-secondary">Ciclo Lectivo</label>
-
                             {/* Select Dinámico con los datos de la DB */}
                             <select
                                 className="form-select"
@@ -195,23 +268,57 @@ export default function CargaNotaAlumno() {
                                     </option>
                                 ))}
                             </select>
-
                         </CCol>
+
                         <CCol md={3}>
                             <label className="form-label text-uppercase small fw-semibold text-secondary">Curso</label>
-                            <select className="form-select">
-                                <option>5° A</option>
-                            </select>
-                        </CCol>
-                        <CCol md={3}>
-                            <label className="form-label text-uppercase small fw-semibold text-secondary">Materia</label>
-                            <select className="form-select" onChange={(e) => setMateriaId(e.target.value)}>
-                                <option value="">Seleccione materia</option>
-                                <option value="2">TIC</option>
-                                <option value="1">Matemática</option>
+                            {/* Select Dinámico con los datos de la DB */}
+                            <select
+                                className="form-select"
+                                value={selectedCursoId} // El estado que guarda el curso seleccionado
+                                onChange={(e) => setSelectedCursoId(e.target.value)} // Actualiza el ID del curso al elegir
+                                disabled={cursos.length === 0} // Se deshabilita si la lista está vacía
+                            >
+                                {/* Opción por defecto dinámica */}
+                                <option value="">
+                                    {cursos.length > 0 ? "Seleccionar Curso" : "Primero elija un Ciclo"}
+                                </option>
+
+                                {/* Mapeo de los cursos traídos del endpoint */}
+                                {cursos.map((item) => (
+                                    <option
+                                        key={item.id_curso}
+                                        value={item.id_curso}>
+                                        {item.curso}
+                                    </option>
+                                ))}
                             </select>
                         </CCol>
 
+
+                        <CCol md={3}>
+                            <label className="form-label text-uppercase small fw-semibold text-secondary">Materia</label>
+                            <select
+                                className="form-select"
+                                value={materiaId} // El estado que guarda la materia seleccionada
+                                onChange={(e) => setMateriaId(e.target.value)}
+                                disabled={materias.length === 0} // Se deshabilita si la lista está vacía
+                            >
+                                {/* Opción por defecto dinámica */}
+                                <option value="">
+                                    {materias.length > 0 ? "Seleccionar Materia" : "Primero elija un Curso"}
+                                </option>
+
+                                {/* Mapeo de las materias traídas del endpoint */}
+                                {materias.map((item) => (
+                                    <option
+                                        key={item.id_materia}
+                                        value={item.id_materia}>
+                                        {item.nombre_rel.nombre_materia}
+                                    </option>
+                                ))}
+                            </select>
+                        </CCol>
 
 
                         <CCol md={3} className="d-flex align-items-end ">
@@ -305,16 +412,19 @@ export default function CargaNotaAlumno() {
                                                 <span className="fst-italic">Mañana</span>
                                             </CCol>
                                         </CRow>
+
                                         <CRow className="g-0 border-bottom">
                                             <CCol xs={6} className="p-1 border-end d-flex">
                                                 <span className="fw-bold me-2">ASIGNATURA:</span>
-                                                <span>5A - TIC</span>
+                                                <span>{datosPlanilla.materia} </span>
                                             </CCol>
+
                                             <CCol xs={6} className="p-1 d-flex">
                                                 <span className="fw-bold me-2">Fecha</span>
-                                                <span>23/05/2025</span>
+                                                <span>{datosPlanilla.fecha}</span>
                                             </CCol>
                                         </CRow>
+
                                         <CRow className="g-0">
                                             <CCol xs={12} className="p-1 d-flex">
                                                 <span className="fw-bold me-2">DOCENTE:</span>
@@ -326,14 +436,13 @@ export default function CargaNotaAlumno() {
                             </CRow>
 
                             {/* TABLA DE NOTAS */}
-                            <table className="table table-bordered table-sm align-middle text-center" style={{ fontSize: '0.9rem' }}>
+                            <div style={{ maxHeight: '400px', overflowY: 'auto' }}>
                                 {/*< ModeloPlanilla /> */}
                                 {/* Tabla de estudiantes */}
                                 <GenericTable table={table} />
-                            </table>
-
-
+                            </div>
                         </div>
+
                     </CCardBody>
                 </CCard>
             )}
